@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.34112.143
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CustOrderPro", "DevExtremeAspNetCoreAppDemo1\CustOrderPro.csproj", "{88E9C9DC-C13D-4FD0-8D00-D2F542FD60E8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DevExtreme NuGet.config", "DevExtreme NuGet.config", "{DF32A566-6EBA-47E7-A360-EFF1B39AEEFE}"
+	ProjectSection(SolutionItems) = preProject
+		NuGet.config = NuGet.config
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{88E9C9DC-C13D-4FD0-8D00-D2F542FD60E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88E9C9DC-C13D-4FD0-8D00-D2F542FD60E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88E9C9DC-C13D-4FD0-8D00-D2F542FD60E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88E9C9DC-C13D-4FD0-8D00-D2F542FD60E8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {030E9CED-9DDA-413C-9F9D-6FF995406418}
+	EndGlobalSection
+EndGlobal

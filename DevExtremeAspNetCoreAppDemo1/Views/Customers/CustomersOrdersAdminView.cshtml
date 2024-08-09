@@ -1,0 +1,325 @@
+﻿@inject UserManager<Customer> userManager
+@model IEnumerable<OrderReceipt>
+
+@{
+    var user = await userManager.GetUserAsync(User);
+    var orderReceiptsJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
+    ViewData["Title"] = "Customers&Orders";
+}
+
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/google-libphonenumber@3.2.20/dist/libphonenumber.js"></script>
+</head>
+<body>
+    <div>
+        @(Html.DevExtreme().DataGrid<Customer>()
+                    .ID("CustomerGrid")
+                    .DataSource(ds => ds.Mvc()
+                        .Controller("Customers")
+                        .LoadAction("Get")
+                        .InsertAction("Post")
+                        .UpdateAction("Put")
+                        .DeleteAction("Delete")
+                        .Key("Id")
+                    )
+                    .Height(new JS("CustomerGridHeight"))
+                    .RemoteOperations(true)
+                    .ShowRowLines(true)
+                    .RowAlternationEnabled(true)
+                    .AllowColumnResizing(true)
+                    .FilterPanel(f => f.Visible(true))
+                    .FilterBuilderPopup(p => p
+                        .Position(pos => pos
+                            .At(HorizontalAlignment.Center, VerticalAlignment.Top)
+                            .My(HorizontalAlignment.Center, VerticalAlignment.Top)
+                            .Offset(0, 10)
+                        )
+                        .Width(400)
+                        .Height(400)
+                    )
+                    .Pager(p => p
+                        .ShowNavigationButtons(true)
+                        .Visible(true)
+                        .DisplayMode(GridPagerDisplayMode.Full)
+                        .ShowInfo(true)
+                    )
+                    .Selection(s => s
+                        .Mode(SelectionMode.Single)
+                    )
+                    .Columns(columns =>
+                    {
+                        columns.AddFor(m => m.Name).ValidationRules(rules =>
+                        {
+                            rules.AddRequired();
+                        });
+                        columns.AddFor(m => m.Gender).Lookup(lookup => lookup
+                                    .DataSource(new[] {
+                                        new { Value = "Male", Text = "Male" },
+                                        new { Value = "Female", Text = "Female" },
+                                        new { Value = "Other", Text = "Other" }
+                                    })
+                                    .ValueExpr("Value")
+                                    .DisplayExpr("Text")
+                                );
+                        columns.AddFor(m => m.Email).ValidationRules(rules =>
+                        {
+                            rules.AddEmail();
+                            rules.AddRequired();
+                        });
+                        columns.AddFor(m => m.PhoneNumber).ValidationRules(rules =>
+                        {
+                            rules.AddRequired();
+                            rules.AddCustom()
+                                .ValidationCallback("validatePhoneNumber")
+                                .Message("Invalid phone number");
+                        });
+                        columns.AddFor(m => m.Address).ValidationRules(rules =>
+                        {
+                            rules.AddRequired();
+                        });
+                        columns.AddFor(m => m.City).ValidationRules(rules =>
+                        {
+                            rules.AddRequired();
+                        });
+                        columns.AddFor(m => m.Country).ValidationRules(rules =>
+                        {
+                            rules.AddRequired();
+                        });
+                    })
+                    .OnSelectionChanged("onCustomerGridSelectionChanged")
+                    .Paging(p => p.PageSize(12))
+                    .Editing(e => e
+                        .AllowAdding(true)
+                        .AllowUpdating(true)
+                        .AllowDeleting(true)
+                    )
+        )
+
+        @(Html.DevExtreme().Accordion()
+                    .ID("AccordionContainer")
+                    .Items(it =>
+                    {
+                        it.Add().Title("Orders").Template(new TemplateName("OrderAccordianTemplate"));
+                    }
+                    )
+                    .Collapsible(true)
+        )
+
+        @using (Html.DevExtreme().NamedTemplate("OrderAccordianTemplate"))
+        {
+            <div class="row">
+                <div class="col-6">
+                    <div>
+                        @(Html.DevExtreme().TabPanel()
+                                    .ID("ProductOrderTabPanel")
+                                    .Items(tp =>
+                                    {
+                                        tp.Add().Title("Product Orders").Template(new TemplateName("ProductOrderTabTemplate"));
+                                    })
+                        )
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div>
+                        @(Html.DevExtreme().TabPanel()
+                                    .ID("CryptoOrderTabPanel")
+                                    .Items(tp =>
+                                    {
+                                        tp.Add().Title("Crypto Orders").Template(new TemplateName("CrytoOrderTabTemplate"));
+                                    })
+                        )
+                    </div>
+                </div>
+            </div>
+        }
+
+        @using (Html.DevExtreme().NamedTemplate("ProductOrderTabTemplate"))
+        {
+            <div>
+                @(Html.DevExtreme().DataGrid<Order>()
+                            .ID("OrderGrid")
+                            .DataSource(ds => ds.Mvc()
+                                .Controller("Orders")
+                                .LoadParams(new { CustomerId = new JS("GetCustomerId")})
+                                .LoadAction("Get")
+                                .InsertAction("Post")
+                                .UpdateAction("Put")
+                                .DeleteAction("Delete")
+                                .Key("OrderId")
+                            )
+                            .Selection(s => s
+                                .Mode(SelectionMode.Single)
+                            )
+                            .RemoteOperations(true)
+                            .ShowRowLines(true)
+                            .RowAlternationEnabled(true)
+                            .AllowColumnResizing(true)
+                            .Height(new JS("ProductOrderGridHeight"))
+                            .Columns(columns =>
+                            {
+                                columns.AddFor(m => m.CustomerId).AllowEditing(false).Caption("CustomerName").Lookup(lookup => lookup
+                                                        .DataSource(ds => ds.WebApi().Controller("Orders").LoadAction("CustomersLookup").Key("Value"))
+                                                        .ValueExpr("Value")
+                                                        .DisplayExpr("Text")
+                                                    );
+                                columns.AddFor(m => m.NumberOfItems);
+                                columns.AddFor(m => m.TotalPrice);
+                                columns.AddFor(m => m.PaymentStatus).Lookup(lookup => lookup
+                                    .DataSource(new[] {
+                                    new { Value = "Paid", Text = "Paid" },
+                                    new { Value = "Pending", Text = "Pending" }
+                                    })
+                                    .ValueExpr("Value")
+                                    .DisplayExpr("Text")
+                                );
+                                columns.Add().Type(GridCommandColumnType.Buttons)
+                                .Width(170)
+                                .Buttons(buttons =>
+                                {
+                                    buttons.Add().Name(GridColumnButtonName.Edit);
+                                    buttons.Add().Name(GridColumnButtonName.Delete);
+                                    buttons.Add()
+                                    .Name("View")
+                                    .Text("Receipt")
+                                    .OnClick("showReceipt");
+
+                                });
+                            })
+                            .HeaderFilter(f => f.Visible(true))
+                            .Editing(e => e
+                                .AllowAdding(true)
+                                .AllowUpdating(true)
+                                .AllowDeleting(true)
+                            )
+                            .OnInitNewRow("function(e) { e.data.CustomerId = GetCustomerId(); }")
+                )
+            </div>
+        }
+
+        @using (Html.DevExtreme().NamedTemplate("CrytoOrderTabTemplate"))
+        {
+            <div>
+                @(Html.DevExtreme().DataGrid<CryptoOrder>()
+                            .ID("CryptoOrderGrid")
+                            .DataSource(ds => ds.Mvc()
+                                .Controller("CryptoOrders")
+                                .LoadParams(new { CustomerId = new JS("GetCustomerId") })
+                                .LoadAction("Get")
+                                .InsertAction("Post")
+                                .UpdateAction("Put")
+                                .DeleteAction("Delete")
+                                .Key("CryptoId")
+                            )
+                            .Selection(s => s
+                                .Mode(SelectionMode.Single)
+                            )
+                            .RemoteOperations(true)
+                            .ShowRowLines(true)
+                            .ShowBorders(true)
+                            .RowAlternationEnabled(true)
+                            .AllowColumnResizing(true)
+                            .Height(new JS("CrytpoOrderGridHeight"))
+                            .Columns(columns =>
+                            {
+                                columns.AddFor(m => m.CustomerId).AllowEditing(false).Caption("CustomerName").Lookup(lookup => lookup
+                                    .DataSource(ds => ds.WebApi().Controller("CryptoOrders").LoadAction("CustomersLookup").Key("Value"))
+                                    .ValueExpr("Value")
+                                    .DisplayExpr("Text")
+                                );
+
+                                columns.AddFor(m => m.Symbol).Lookup(lookup => lookup
+                                    .DataSource(new[] {
+                                    new { Value = "BTC", Text = "BTC" },
+                                    new { Value = "ETH", Text = "ETH" }
+                                    })
+                                    .ValueExpr("Value")
+                                    .DisplayExpr("Text")
+                                );
+
+                                columns.AddFor(m => m.Quantity);
+
+                                columns.AddFor(m => m.Price);
+                            })
+                            .HeaderFilter(f => f.Visible(true))
+                            .Editing(e => e
+                                .AllowAdding(true)
+                                .AllowUpdating(true)
+                                .AllowDeleting(true)
+                            )
+                            .OnInitNewRow("function(e) { e.data.CustomerId = GetCustomerId(); }")
+                )
+            </div>
+        }
+    </div>
+
+    <div id="orderReceiptPopup"></div>
+
+    <script>
+        var currentSelectedCustomerId = 0;
+        var CustomerGridHeight = $(window).height() * .50;
+        var ProductOrderGridHeight = $(window).height() * .355;
+        var CrytpoOrderGridHeight = $(window).height() * .355;
+        var orderReceiptsData = @Html.Raw(orderReceiptsJson);
+
+        function GetCustomerId() {
+            return currentSelectedCustomerId;
+        }
+
+        function onCustomerGridSelectionChanged(e) {
+            var data = e.selectedRowsData[0];
+            if (data) {
+                currentSelectedCustomerId = data.Id;
+                reloadOrderGrid();
+            }
+        }
+
+        function reloadOrderGrid() {
+            var orderDataGridInstance = $("#OrderGrid").dxDataGrid("instance");
+            var cryptoOrderGridInstance = $("#CryptoOrderGrid").dxDataGrid("instance");
+
+            if (orderDataGridInstance && cryptoOrderGridInstance) {
+                orderDataGridInstance.getDataSource().reload();
+                cryptoOrderGridInstance.getDataSource().reload();
+            }
+        }
+
+        function showReceipt(e) {
+            var orderId = e.row.data.OrderId;
+            var orderReceipt = orderReceiptsData.find(or => or.OrderId === orderId);
+            if (!orderReceipt) {
+                console.error("Order receipt not found");
+                return;
+            }
+
+            var orderDetailsHtml = `
+                    <div>
+                        <p>${orderReceipt.ReceiptDetails}</p>
+                    </div>
+                `;
+            $("#orderReceiptPopup").dxPopup({
+                title: "Order Receipt",
+                contentTemplate: function (contentElement) {
+                    contentElement.append(orderDetailsHtml);
+                },
+                width: 400,
+                height: 200,
+                visible: true,
+                position: {
+                    my: 'right top',
+                    at: 'right top',
+                    of: '#OrderGrid'
+                }
+            }).dxPopup("instance").show();
+        }
+
+        function validatePhoneNumber(params) {
+            const phoneNumberUtil = libphonenumber.PhoneNumberUtil.getInstance();
+            try {
+                const phoneNumberProto = phoneNumberUtil.parse(params.value);
+                return phoneNumberUtil.isValidNumber(phoneNumberProto);
+            } catch (e) {
+                return false;
+            }
+        }
+    </script>
+</body>

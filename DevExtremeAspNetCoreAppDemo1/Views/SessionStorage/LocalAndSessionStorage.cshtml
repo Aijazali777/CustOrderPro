@@ -1,0 +1,59 @@
+﻿@{
+    ViewBag.Title = "LocalAndSessionStorage";
+}
+
+<div class="d-flex justify-content-center align-items-baseline vh-100" style="max-height: 90vh;">
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <h3 class="card-title text-center mb-4" style="color: #2c3e50;">LocalAndSessionStorage</h3>
+            <form id="LocalAndSessionStorageForm">
+                <div class="form-group">
+                    <input id="FirstName" class="form-control" placeholder="Enter First Name" />
+                </div>
+                <div class="form-group">
+                    <input id="LastName" class="form-control" placeholder="Enter Last Name" />
+                </div>
+                <div class="form-group mb-3">
+                    <input id="Email" class="form-control" placeholder="Enter your email" />
+                </div>
+                <div class="d-flex justify-content-center mb-2">
+                    <button type="button" onclick="SaveLocalAndSessionStorage()" class="btn btn-primary">Save Data</button>
+                    <button type="button" onclick="GetLocalAndSessionStorage()" class="btn btn-primary">Get Data</button>
+                </div>
+                <div class="form-group mb-3" style="color:black">
+                    <label id="LblFirstName"></label>
+                    <label id="LblLastName"></label>
+                    <label id="LblEmail"></label>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function SaveLocalAndSessionStorage() {
+
+        // Local Storage setItem method
+        var firstName = document.getElementById('FirstName').value;
+        localStorage.setItem('FirstName', firstName);
+        var lastName = document.getElementById('LastName').value;
+        localStorage.setItem('LastName', lastName);
+
+        // Session Storage setItem method
+        var email = document.getElementById('Email').value;
+        sessionStorage.setItem('Email', email);
+    }
+
+    function GetLocalAndSessionStorage() {
+
+        // Local Storage getItem method
+        var firstName = localStorage.getItem('FirstName');
+        document.getElementById('LblFirstName').textContent = firstName;
+        var lastName = localStorage.getItem('LastName');
+        document.getElementById('LblLastName').textContent = lastName;
+
+        // Session Storage getItem method
+        var email = sessionStorage.getItem('Email');
+        document.getElementById('LblEmail').textContent = email;
+    }
+</script>

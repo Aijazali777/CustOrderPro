@@ -1,0 +1,116 @@
+﻿@inject SignInManager<Customer> signInManager
+﻿
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title> @ViewData["Title"] </title>
+    <link rel="stylesheet" href="~/css/vendor.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Site.css" asp-append-version="true" />
+    <link href="~/css/devextreme/dx.dark.compact.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="~/js/vendor.js" asp-append-version="true"></script>
+</head>
+<body>
+    <div>
+        <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+            <a class="navbar-brand">
+                <img src="~/images/omsLogo.png" height="30" width="30" />
+            </a>
+            <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#collapseNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="collapseNavbar">
+                <ul class="navbar-nav">
+                    @if (signInManager.IsSignedIn(User))
+                    {
+                        if (User.IsInRole("Admin") && User.IsInRole("User"))
+                        {
+                            <li class="nav-item">
+                                <a asp-action="CustomerOrdersUserView" asp-controller="Orders" class="nav-link">MyOrders</a>
+                            </li>
+                            <li class="nav-item">
+                                <a asp-action="CustomersOrdersAdminView" asp-controller="Customers" class="nav-link">Customers&Orders</a>
+                            </li>
+                            <li class="nav-item">
+                                <a asp-action="ManageRoles" asp-controller="Administration" class="nav-link">ManageRoles</a>
+                            </li>
+                        }
+                        else if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a asp-action="CustomersOrdersAdminView" asp-controller="Customers" class="nav-link">Customers&Orders</a>
+                            </li>
+                            <li class="nav-item">
+                                <a asp-action="ManageRoles" asp-controller="Administration" class="nav-link">ManageRoles</a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a asp-action="CustomerOrdersUserView" asp-controller="Orders" class="nav-link">MyOrders</a>
+                            </li>
+                        }
+
+                        <li class="nav-item">
+                            <a asp-action="Profile" asp-controller="Customers" class="nav-link">MyProfile</a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a asp-action="Index" asp-controller="Home" class="nav-link">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-action="About" asp-controller="Home" class="nav-link">About Us</a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-action="Contact" asp-controller="Home" class="nav-link">Contact Us</a>
+                        </li>
+                    }
+                </ul>
+                <ul class="navbar-nav ml-auto">
+                    @if (signInManager.IsSignedIn(User))
+                    {
+                        <li class="nav-item dropdown-toggle" role="button" data-toggle="dropdown">
+
+                            <i class="fa fa-user">@User.Identity.Name</i>
+                        </li>
+                        <li class="dropdown-menu dropdown-menu-right bg-dark">
+                            <a class="dropdown-item" asp-action="ChangePassword" asp-controller="Account"><i class="fa fa-key"></i> Change Password</a>
+                            <div class="dropdown-divider"></div>
+                            <form method="post" asp-action="logout" asp-controller="account">
+                                <button type="submit" class="dropdown-item"><i class="fa fa-power-off"></i> Logout</button>
+                            </form>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a asp-action="Login" asp-controller="Account" class="nav-link"><i class="fa fa-user"></i> Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-action="Signup" asp-controller="Account" class="nav-link"><i class="fa fa-user-plus"></i> SignUp</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </nav>
+
+        <div>
+            @RenderBody()
+        </div>
+    </div>
+
+    @if (!signInManager.IsSignedIn(User))
+    {
+        <footer class="footer">
+            <div>
+                @DateTime.Now.Year Copyright: CustOrderPro
+            </div>
+        </footer>
+    }
+
+</body>
+</html>

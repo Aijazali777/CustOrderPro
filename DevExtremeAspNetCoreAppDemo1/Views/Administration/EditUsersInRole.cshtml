@@ -1,0 +1,25 @@
+﻿@model List<UserRole>
+
+@{
+    var roleId = ViewBag.roleId;
+}
+
+
+<div class="row">
+    <div class="col-md-12">
+        <h3> Add or remove user from this role</h3>
+        <form method="Post">
+            <div class="form-group">
+                @for (int i = 0; i< Model.Count; i++)
+                {
+                <div class="form-check m-1">
+                    <input type="hidden" asp-for="@Model[i].UserId" />
+                    <input type="hidden" asp-for="@Model[i].UserName" />
+                </div>
+                }
+            </div>
+            <input type="submit" value="Update" class="btn btn-primary"/>
+            <a asp-action="editrole" asp-controller="administration" asp-route-roleId="@roleId" class="btn btn-primary">Cancel</a>
+        </form>
+    </div>
+</div>

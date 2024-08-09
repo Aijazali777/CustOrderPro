@@ -1,0 +1,54 @@
+﻿@model Login
+
+@{
+    ViewBag.Title = "SignIn";
+}
+
+<div class="d-flex justify-content-center align-items-baseline vh-100" style="max-height: 90vh;">
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <h3 class="card-title text-center mb-4" style="color: #2c3e50;">Login</h3>
+            <form id="loginForm" method="post">
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                <div class="form-group mb-3">
+                    <input id="Email" asp-for="Email" class="form-control" placeholder="Enter your email" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div class="form-group mb-3">
+                    <input id="Password" asp-for="Password" type="password" class="form-control" placeholder="Enter your password" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+                <input type="hidden" id="values" name="values" />
+                <div class="d-flex justify-content-center mb-2">
+                    <!--<button type="submit" class="btn btn-primary">Login</button>-->
+                    <button type="button" onclick="submitForm()" class="btn btn-primary">Login</button>
+                </div>
+                <div class="text-center">
+                    <span style="color: #2c3e50;">Not registered&nbsp;</span> <a asp-controller="Account" asp-action="SignUp">Click here to register!</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function submitForm() {
+
+        var email = document.getElementById('Email').value;
+        sessionStorage.setItem('Email', email);
+        localStorage.setItem('Username', email);
+
+        var formData = {
+            Email: document.getElementById('Email').value,
+            Password: document.getElementById('Password').value
+        };
+
+        var jsonFormData = JSON.stringify(formData);
+        document.getElementById('values').value = jsonFormData;
+        document.getElementById('loginForm').submit();
+    }
+</script>
+
+
+
+

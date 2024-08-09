@@ -1,0 +1,194 @@
+﻿@inject UserManager<Customer> userManager
+@model IEnumerable<OrderReceipt>
+
+@{
+    var user = await userManager.GetUserAsync(User);
+    var orderReceiptsJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
+    ViewData["Title"] = "My Orders";
+}
+
+<body>
+    <div>
+        @(Html.DevExtreme().Accordion()
+            .ID("accordion-container")
+            .Items(it =>
+            {
+                it.Add().Title("Orders").Template(new TemplateName("OrderAccordianTemplate"));
+            }
+            )
+            .Collapsible(true)
+            .Multiple(true)
+        )
+    </div>
+
+    @using (Html.DevExtreme().NamedTemplate("OrderAccordianTemplate"))
+    {
+        <div class="row">
+            <div class="col-12">
+                <div>
+                    @(Html.DevExtreme().TabPanel()
+                        .ID("OrderTabPanel")
+                        .Items(tp =>
+                        {
+                            tp.Add().Title("Product Orders").Template(new TemplateName("OrderTabTemplate"));
+                            tp.Add().Title("Crypto Orders").Template(new TemplateName("CrytoOrderTabTemplate"));
+                        })
+                    )
+                </div>
+            </div>
+        </div>
+    }
+
+    @using (Html.DevExtreme().NamedTemplate("OrderTabTemplate"))
+    {
+        <div>
+            @(Html.DevExtreme().DataGrid<Order>()
+                .ID("orderGrid")
+                .DataSource(ds => ds.Mvc()
+                    .Controller("Orders")
+                    .LoadParams(new { CustomerId = user.Id })
+                    .LoadAction("Get")
+                    .InsertAction("Post")
+                    .UpdateAction("Put")
+                    .DeleteAction("Delete")
+                    .Key("OrderId")
+                )
+                .Selection(s => s
+                .Mode(SelectionMode.Single)
+                )
+                .RemoteOperations(true)
+                .ShowRowLines(true)
+                .ShowBorders(true)
+                .RowAlternationEnabled(true)
+                .AllowColumnResizing(true)
+                .Height(new JS("orderGridHeight"))
+                .Columns(columns =>
+                {
+                    columns.AddFor(m => m.CustomerId).AllowEditing(false).Caption("CustomerName").Lookup(lookup => lookup
+                        .DataSource(ds => ds.WebApi().Controller("Orders").LoadAction("CustomersLookup").Key("Value"))
+                        .ValueExpr("Value")
+                        .DisplayExpr("Text"));
+                    columns.AddFor(m => m.NumberOfItems);
+                    columns.AddFor(m => m.TotalPrice);
+                    columns.AddFor(m => m.PaymentStatus).Lookup(lookup => lookup
+                            .DataSource(new[] {
+                                new { Value = "Paid", Text = "Paid" },
+                                new { Value = "Pending", Text = "Pending" }
+                            })
+                            .ValueExpr("Value")
+                            .DisplayExpr("Text")
+                        );
+                    columns.Add().Type(GridCommandColumnType.Buttons)
+                        .Width(170)
+                        .Buttons(buttons =>
+                        {
+                            buttons.Add().Name(GridColumnButtonName.Edit);
+                            buttons.Add().Name(GridColumnButtonName.Delete);
+                            buttons.Add()
+                            .Name("View")
+                            .Text("Receipt")
+                            .OnClick("showReceipt");
+
+                        });
+                })
+                .HeaderFilter(f => f.Visible(true))
+                .Editing(e => e
+                    .AllowAdding(true)
+                    .AllowUpdating(true)
+                    .AllowDeleting(true)
+
+                )
+                .OnInitNewRow($"function(e) {{ e.data.CustomerId = '{ user.Id}'; }}")
+            )
+        </div>
+    }
+
+    @using (Html.DevExtreme().NamedTemplate("CrytoOrderTabTemplate"))
+    {
+        <div>
+            @(Html.DevExtreme().DataGrid<CryptoOrder>()
+                .ID("cryptoOrderGrid")
+                .DataSource(ds => ds.Mvc()
+                    .Controller("CryptoOrders")
+                    .LoadParams(new { CustomerId = user.Id })
+                    .LoadAction("Get")
+                    .InsertAction("Post")
+                    .UpdateAction("Put")
+                    .DeleteAction("Delete")
+                    .Key("CryptoId")
+                )
+                .Selection(s => s
+                .Mode(SelectionMode.Single)
+                )
+                .RemoteOperations(true)
+                .ShowRowLines(true)
+                .ShowBorders(true)
+                .RowAlternationEnabled(true)
+                .AllowColumnResizing(true)
+                .Height(new JS("cryptoOrderGridHeight"))
+                .Columns(columns =>
+                {
+                    columns.AddFor(m => m.CustomerId).AllowEditing(false).Caption("CustomerName").Lookup(lookup => lookup
+                            .DataSource(ds => ds.WebApi().Controller("CryptoOrders").LoadAction("CustomersLookup").Key("Value"))
+                            .ValueExpr("Value")
+                            .DisplayExpr("Text"));
+
+                    columns.AddFor(m => m.Symbol).Lookup(lookup => lookup
+                            .DataSource(new[] {
+                                new { Value = "BTC", Text = "BTC" },
+                                new { Value = "ETH", Text = "ETH" }
+                            })
+                            .ValueExpr("Value")
+                            .DisplayExpr("Text")
+                        );
+                    columns.AddFor(m => m.Quantity);
+                    columns.AddFor(m => m.Price);
+                })
+                .HeaderFilter(f => f.Visible(true))
+                .Editing(e => e
+                    .AllowAdding(true)
+                    .AllowUpdating(true)
+                    .AllowDeleting(true)
+                )
+                .OnInitNewRow($"function(e) {{ e.data.CustomerId = '{ user.Id}'; }}")
+            )
+        </div>
+    }
+
+    <div id="orderReceiptPopup"></div>
+
+    <script>
+        var orderGridHeight = $(window).height() * .855;
+        var cryptoOrderGridHeight = $(window).height() * .855;
+        var orderReceiptsData = @Html.Raw(orderReceiptsJson);
+
+        function showReceipt(e) {
+            var orderId = e.row.data.OrderId;
+            var orderReceipt = orderReceiptsData.find(or => or.OrderId === orderId);
+            if (!orderReceipt) {
+                console.error("Order receipt not found");
+                return;
+            }
+
+            var orderDetailsHtml = `
+                    <div>
+                        <p>${orderReceipt.ReceiptDetails}</p>
+                    </div>
+                `;
+            $("#orderReceiptPopup").dxPopup({
+                title: "Order Receipt",
+                contentTemplate: function (contentElement) {
+                    contentElement.append(orderDetailsHtml);
+                },
+                width: 400,
+                height: 200,
+                visible: true,
+                position: {
+                    my: 'right top',
+                    at: 'right top',
+                    of: '#orderGrid'
+                }
+            }).dxPopup("instance").show();
+        }
+    </script>
+</body>

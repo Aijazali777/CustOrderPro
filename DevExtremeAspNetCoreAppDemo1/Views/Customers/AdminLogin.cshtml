@@ -1,0 +1,33 @@
+﻿@{ 
+    ViewData["Title"] = "Admin Login";
+}
+
+@using (Html.BeginForm("ClickAdminLogin", "Customers", FormMethod.Post))
+{
+    <div class="custom-form">
+        @(Html.DevExtreme().Form<Admin>()
+                .LabelLocation(FormLabelLocation.Top)
+                .Items(items =>
+                {
+                    items.AddSimple().CssClass("custom-headerlabel")
+                    .Template(@<text>
+                       <div>Admin Login</div>
+                    </text>);
+
+                    items.AddSimpleFor(m => m.Username).CssClass("custom-input").Editor(m => m.TextBox().ShowClearButton(true)).IsRequired(true);
+
+                    items.AddSimpleFor(m => m.Password).CssClass("custom-input").Editor(m => m.TextBox().Mode(TextBoxMode.Password).ShowClearButton(true)).IsRequired(true);
+
+                    items.AddButton().CssClass("custom-button").HorizontalAlignment(HorizontalAlignment.Center).ButtonOptions(options => options.Text("Login").Type(ButtonType.Default).UseSubmitBehavior(true));
+
+                    if((bool)ViewBag.LoginMessage)
+                    {
+                        items.AddSimple()
+                        .Template(@<text>
+                            <div style="text-align: center; color:red;"> Incorrect username or password</div>
+                            </text>);
+                    }
+                })
+        )
+    </div>
+}

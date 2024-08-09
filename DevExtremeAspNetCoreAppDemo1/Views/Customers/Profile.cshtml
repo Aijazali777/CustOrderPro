@@ -1,0 +1,128 @@
+﻿@inject UserManager<Customer> userManager
+
+@{
+    var user = await userManager.GetUserAsync(User);
+    ViewData["Title"] = "My Profile";
+}
+
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/google-libphonenumber@3.2.20/dist/libphonenumber.js"></script>
+</head>
+<body>
+    <div class="dx-viewport" style="margin: 0px; height:886px">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-8 mt-5">
+                    ﻿@using (Html.BeginForm("Profile", "Customers", FormMethod.Post))
+                    {
+                        @(Html.DevExtreme().Form<Customer>()
+                                .ID("ProfileForm")
+                                .FormData(user)
+                                .Disabled(true)
+                                .Items(items =>
+                                {
+                                items.AddGroup()
+                                        .CssClass("group-items")
+                                        .Items(groupItems =>
+                                        {
+                                            groupItems.AddGroup().ColSpan(3).Items(groupItem =>
+                                            {
+                                            groupItem.AddSimple()
+                                                .CssClass("custom-headerlabel")
+                                                .Template(@<text>
+                                                <div>My Profile</div>
+                                            </text>);
+                                                groupItem.AddSimpleFor(m => m.Name).IsRequired(true);
+                                                groupItem.AddSimpleFor(m => m.UserName).Template(@<text>
+                                                <input class="dx-readOnly-field col-12" readonly="readonly" value="@user.UserName" />
+                                            </text>);
+                                                    groupItem.AddSimpleFor(m => m.Email).Template(@<text>
+                                                <input class="dx-readOnly-field col-12" readonly="readonly" value="@user.Email" />
+                                            </text>);
+                                                    groupItem.AddSimpleFor(m => m.Email).Visible(false);
+                                                    groupItem.AddSimpleFor(m => m.Gender).Template(@<text>
+                                                <input class="dx-readOnly-field col-12" readonly="readonly" value="@user.Gender" />
+                                            </text>);
+                                                groupItem.AddSimpleFor(m => m.PhoneNumber).ValidationRules(rule =>
+                                                {
+                                                    rule.AddRequired();
+                                                    rule.AddCustom()
+                                                        .ValidationCallback("validatePhoneNumber")
+                                                        .Message("Invalid phone number");
+                                                });
+                                                groupItem.AddSimpleFor(m => m.Address).IsRequired(true);
+                                                groupItem.AddSimpleFor(m => m.City).IsRequired(true);
+                                                groupItem.AddSimpleFor(m => m.Country).IsRequired(true);
+                                            });
+                                            groupItems.AddButton()
+                                            .CssClass("custom-button")
+                                            .HorizontalAlignment(HorizontalAlignment.Center)
+                                            .ButtonOptions(options => options
+                                                .ID("saveButton")
+                                                .Width(640)
+                                                .Text("Save")
+                                                .Type(ButtonType.Default)
+                                                .UseSubmitBehavior(true));
+                                            groupItems.AddButton()
+                                            .CssClass("custom-button")
+                                            .HorizontalAlignment(HorizontalAlignment.Center)
+                                            .ButtonOptions(options => options
+                                                .ID("cancelButton")
+                                                .Width(640)
+                                                .Text("Cancel")
+                                                .Type(ButtonType.Default));
+                                        });
+                                })
+                        )}
+                    <div id="buttonGroup">
+                        <div class="btn-group col-12" role="group">
+                            <button id="editButton" class="btn btn-outline-info"> Edit </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        var initialFormData;
+        
+        $(function () {
+            $('#saveButton').hide();
+            $('#cancelButton').hide();
+
+            $('#editButton').click(function () {
+                var formInstance = $('#ProfileForm').dxForm('instance');
+                initialFormData = $.extend(true, {}, formInstance.option('formData'));
+                var currentDisabledState = formInstance.option('disabled');
+                formInstance.option('disabled', !currentDisabledState);
+                $('#editButton').hide();
+                $('#saveButton').show();
+                $('#cancelButton').show();
+            });
+
+            $('#cancelButton').click(function () {
+                var formInstance = $('#ProfileForm').dxForm('instance');
+                formInstance.option('disabled', true);
+                $('#editButton').show();
+                $('#saveButton').hide();
+                $('#cancelButton').hide();
+                resetForm();
+            })
+
+            function resetForm() {
+                var formInstance = $('#ProfileForm').dxForm('instance');
+                formInstance.option('formData', $.extend(true, {}, initialFormData));
+            }
+        });
+
+        function validatePhoneNumber(params) {
+            const phoneNumberUtil = libphonenumber.PhoneNumberUtil.getInstance();
+            try {
+                const phoneNumberProto = phoneNumberUtil.parse(params.value);
+                return phoneNumberUtil.isValidNumber(phoneNumberProto);
+            } catch (e) {
+                return false;
+            }
+        }
+    </script>
+</body>

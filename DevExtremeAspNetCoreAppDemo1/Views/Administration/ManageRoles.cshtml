@@ -1,0 +1,148 @@
+﻿@model IEnumerable<IdentityRole>
+
+@{
+    ViewData["Title"] = "ManageRoles";
+}
+
+<body>
+    <div>
+        @(Html.DevExtreme().DataGrid<Role>()
+            .ID("RolesGrid")
+            .DataSource(ds => ds.Mvc()
+                .Controller("Administration")
+                .LoadAction("Get")
+                .InsertAction("Post")
+                .UpdateAction("Put")
+                .DeleteAction("Delete")
+                .Key("Id")
+            )
+            .RemoteOperations(true)
+            .ShowRowLines(true)
+            .RowAlternationEnabled(true)
+            .AllowColumnResizing(true)
+            .FilterPanel(f => f.Visible(true))
+                    .FilterBuilderPopup(p => p
+                        .Position(pos => pos
+                            .At(HorizontalAlignment.Center, VerticalAlignment.Top)
+                            .My(HorizontalAlignment.Center, VerticalAlignment.Top)
+                            .Offset(0, 10)
+                        )
+                        .Width(400)
+                        .Height(400)
+                    )
+                    .Pager(p => p
+                        .ShowNavigationButtons(true)
+                        .Visible(true)
+                        .DisplayMode(GridPagerDisplayMode.Full)
+                        .ShowInfo(true)
+                    )
+            .Selection(s => s.Mode(SelectionMode.Single))
+            .Height(new JS("RoleGridHeight"))
+            .Columns(columns =>
+            {
+                columns.AddFor(m => m.Name);
+            })
+            .OnSelectionChanged("onRoleGridSelectionChanged")
+            .Editing(e => e
+                .AllowAdding(true)
+                .AllowUpdating(true)
+                .AllowDeleting(true)
+            )
+        )
+    </div>
+    <div>
+        @(Html.DevExtreme().Accordion()
+            .ID("accordion-container")
+            .Items(it =>
+            {
+                it.Add().Title("Users").Template(new TemplateName("UsersAccordianTemplate"));
+            }
+            )
+            .Collapsible(true)
+            .Multiple(true)
+        )
+    </div>
+    @using (Html.DevExtreme().NamedTemplate("UsersAccordianTemplate"))
+    {
+        <div class="row">
+            <div class="col-12">
+                <div>
+                    @(Html.DevExtreme().TabPanel()
+                        .ID("UsersTabPanel")
+                        .Items(tp =>
+                        {
+                            tp.Add().Title("Users In Role").Template(new TemplateName("UsersTabTemplate"));
+                        })
+                    )
+                </div>
+            </div>
+        </div>
+    }
+
+    @using (Html.DevExtreme().NamedTemplate("UsersTabTemplate"))
+    {
+            @(Html.DevExtreme().DataGrid<UserRole>()
+                .ID("UsersInRoleGrid")
+                .DataSource(ds => ds.Mvc()
+                    .Controller("UsersInRole")
+                    .LoadAction("Get")
+                    .LoadParams(new { roleId = new JS("GetRoleId") })
+                    .InsertAction("Post")
+                    .UpdateAction("Put")
+                    .DeleteAction("Delete")
+                    .Key("UserId")
+                )
+                .RemoteOperations(true)
+                .ShowRowLines(true)
+                .RowAlternationEnabled(true)
+                .AllowColumnResizing(true)
+                .Selection(s => s.Mode(SelectionMode.Single))
+                .Height(new JS("UsersGridHeight"))
+                .Columns(columns =>
+                {
+                    columns.AddFor(m => m.RoleId).Caption("RoleName").AllowEditing(false).Lookup(lookup => lookup
+                                .DataSource(ds => ds.WebApi().Controller("UsersInRole").LoadAction("RolesLookup").Key("Value"))
+                                .ValueExpr("Value")
+                                .DisplayExpr("Text")
+                            );
+                    columns.AddFor(m => m.UserId).Caption("UserName").Lookup(lookup => lookup
+                                .DataSource(ds => ds.WebApi().Controller("UsersInRole").LoadAction("UsersLookup").Key("Value"))
+                                .ValueExpr("Value")
+                                .DisplayExpr("Text")
+                            );
+                })
+                .OnInitNewRow("function(e) { e.data.RoleId = GetRoleId(); }")
+                .Editing(e => e
+                .AllowAdding(true)
+                .AllowDeleting(true)
+            )
+            )
+    }
+
+<script>
+    var currentSelectedRoleId = 0;
+    var RoleGridHeight = $(window).height() * .48;
+    var UsersGridHeight = $(window).height() * .375;
+
+    function GetRoleId() {
+        return currentSelectedRoleId;
+    }
+
+    function onRoleGridSelectionChanged(e) {
+        var data = e.selectedRowsData[0];
+        if (data) {
+            currentSelectedRoleId = data.Id;
+            reloadUserGrid();
+        }
+    }
+
+    function reloadUserGrid() {
+        var userDataGridInstance = $("#UsersInRoleGrid").dxDataGrid("instance");
+
+        if (userDataGridInstance) {
+            userDataGridInstance.getDataSource().reload();
+        }
+    }
+
+</script>
+</body>

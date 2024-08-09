@@ -1,0 +1,158 @@
+﻿@model SignUp
+
+@{
+    ViewBag.Title = "SignUp";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.min.css" />
+    <script src="~/lib/jquery/jquery.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"></script>
+</head>
+<body>
+    <div class="d-flex justify-content-center align-items-baseline vh-100" style="max-height: 90vh;">
+        <div class="card shadow-sm mt-5">
+            <div class="card-body p-4">
+                <h3 class="card-title text-center mb-4" style="color: #2c3e50;">SignUp</h3>
+                <form method="post">
+                    <div asp-validation-summary="All" class="text-danger"></div>
+                    <div class="form-group">
+                        <input asp-for="Name" class="form-control" placeholder="Enter Name" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <input asp-for="Email" class="form-control" placeholder="Enter Email" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <input asp-for="Password" class="form-control" placeholder="Enter Password" />
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <input asp-for="ConfirmPassword" class="form-control" placeholder="Confirm Password" />
+                        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <select asp-for="Gender" asp-items="ViewBag.Gender" class="form-control"><option value="">Select a Gender</option></select>
+                        <span asp-validation-for="Gender" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <input asp-for="Address" class="form-control" placeholder="Enter Address" />
+                        <span asp-validation-for="Address" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <input id="phone" asp-for="PhoneNumber" maxlength="13" class="form-control" /> <br />
+                        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <select id="country" asp-for="Country" class="form-control"></select>
+                        <span asp-validation-for="Country" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <select id="city" asp-for="City" class="form-control" placeholder="Enter City"></select>
+                        <span asp-validation-for="City" class="text-danger"></span>
+                    </div>
+                    <div class="d-flex justify-content-center">
+                        <button type="submit" class="btn btn-primary">SignUp</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var countryData = window.intlTelInputGlobals.getCountryData();
+            var phoneInput = document.querySelector("#phone");
+            var countryDropdown = document.querySelector("#country");
+            var cityDropdown = document.querySelector("#city");
+
+            // init plugin
+            var intlTelInputPlugin = window.intlTelInput(phoneInput, {
+                utilsScript: "https://intl-tel-input.com/node_modules/intl-tel-input/build/js/utils.js",
+                initialCountry: "pk"
+            });
+
+            // GeoDB Cities API URL
+            var geoDbApiUrl = "https://wft-geo-db.p.rapidapi.com/v1/geo/cities";
+            var apiHeaders = {
+                "X-RapidAPI-Key": "6ffdf867c6msh483c9e55249b53ep1a45e7jsndeda507cf25c",
+                "X-RapidAPI-Host": "wft-geo-db.p.rapidapi.com"
+            };
+
+            // populate the country dropdown
+            for (var i = 0; i < countryData.length; i++) {
+                var country = countryData[i];
+                var optionNode = document.createElement("option");
+                optionNode.value = country.iso2;
+                var textNode = document.createTextNode(country.name);
+                optionNode.appendChild(textNode);
+                countryDropdown.appendChild(optionNode);
+            }
+
+            // set its initial value
+            countryDropdown.value = intlTelInputPlugin.getSelectedCountryData().iso2;
+            populateCities(countryDropdown.value);
+
+            // listen to the phone input for changes
+            phoneInput.addEventListener('countrychange', function (e) {
+                var selectedCountry = intlTelInputPlugin.getSelectedCountryData().iso2;
+                countryDropdown.value = selectedCountry;
+                populateCities(selectedCountry);
+            });
+
+            // listen to the country dropdown for changes
+            countryDropdown.addEventListener('change', function () {
+                var selectedCountryCode = this.value;
+                intlTelInputPlugin.setCountry(selectedCountryCode);
+                populateCities(selectedCountryCode);
+            });
+
+            // Function to populate cities based on the selected country
+            function populateCities(countryCode) {
+                // Clear the existing cities
+                cityDropdown.innerHTML = "";
+
+                // Fetch cities from GeoDB API
+                fetch(`${geoDbApiUrl}?countryIds=${countryCode}&limit=10`, {
+                    method: "GET",
+                    headers: apiHeaders
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        var cities = data.data;
+                        cities.forEach(city => {
+                            var optionNode = document.createElement("option");
+                            optionNode.value = city.name;
+                            var textNode = document.createTextNode(city.name);
+                            optionNode.appendChild(textNode);
+                            cityDropdown.appendChild(optionNode);
+                        });
+                    })
+                    .catch(error => {
+                        console.error("Error fetching cities:", error);
+                    });
+            }
+        });
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var phoneInput = document.querySelector("#phone");
+            if (phoneInput.value === "") {
+                phoneInput.value = '+92';
+            }
+        });
+    </script>
+</body>
+</html>
